@@ -6,6 +6,8 @@ def readReservoirDC(fname):
     data = f.readlines()
     temp = data[3].split()
     nelec, ndata, aspacing = int(temp[0]), int(temp[1]), float(temp[2])
+    height_water = float(data[4+ndata+3].split()[0])
+    height_dam = float(data[4+ndata+4].split()[0])
     ntx = nelec-2
     datalist = []
     for iline, line in enumerate(data[4:4+ndata]):
@@ -28,4 +30,6 @@ def readReservoirDC(fname):
     DAT_src = np.vstack(datalistSRC)
     survey = DC.SurveyDC(srcList)
     survey.dobs = DAT_src[:,-1]
+    survey.height_water = height_water
+    survey.height_dam = height_dam
     return survey
