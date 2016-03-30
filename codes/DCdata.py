@@ -34,7 +34,6 @@ def readReservoirDC(fname):
     survey.height_dam = height_dam
     return survey
 
-
 def readReservoirDC_all(fname):
     f = open(fname, 'r')
     data = f.readlines()
@@ -46,6 +45,7 @@ def readReservoirDC_all(fname):
         isheight = True
     except ValueError:
         isheight = False
+
     if isheight:
         height_water = float(data[4+ndata+3].split()[0])
         height_dam = float(data[4+ndata+4].split()[0])
@@ -55,11 +55,31 @@ def readReservoirDC_all(fname):
 
     ntx = nelec-2
     datalist = []
+    ID = []
+    for iline, line in enumerate(data[4:4+ndata]):
+    #     line = line.replace(ignorevalue, 'nan')
+        linelist = line.split()
+        datalist.append(np.array(map(float, linelist)))
+        ID.append(linelist[0]+linelist[1]+linelist[2]+linelist[3])
+    DAT = np.vstack(datalist)
+    height = np.r_[height_water, height_dam]
+    return DAT,  height, ID
+
+
+def readReservoirDC_data(fname):
+    f = open(fname, 'r')
+    data = f.readlines()
+    temp = data[3].split()
+    nelec, ndata, aspacing = int(temp[0]), int(temp[1]), float(temp[2])
+    element = data[4+ndata+3].split()[0]
+
+
+    ntx = nelec-2
+    datalist = []
     for iline, line in enumerate(data[4:4+ndata]):
     #     line = line.replace(ignorevalue, 'nan')
         linelist = line.split()
         datalist.append(np.array(map(float, linelist)))
 
     DAT = np.vstack(datalist)
-    height = np.r_[height_water, height_dam]
-    return DAT,  height
+    return DAT

@@ -10,5 +10,7 @@ def getFnames(dir, dtype="apr", minimumsize=7000.):
     for file in glob.glob("*.apr"):
         if os.path.getsize(file) > minimumsize:
             fnames.append(file)
+    os.chdir("../../notebook")
     return fnames
+
 
