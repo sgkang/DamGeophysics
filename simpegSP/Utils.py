@@ -44,11 +44,13 @@ def readSeepageModel(fname, mesh=None, xsurf=None, ysurf=None):
         cs = 0.5
         ncx = 152*2
         ncy = 36*2
-        hx = [(cs,0, -1.3),(cs,ncx),(cs,0, 1.3)]
-        hy = [(cs,0, -1.3),(cs,ncy)]
+        npad = 5
+        hx = [(cs,npad, -1.3),(cs,ncx),(cs,npad, 1.3)]
+        hy = [(cs,npad, -1.3),(cs,ncy)]
         mesh = Mesh.TensorMesh([hx, hy], x0 = [xmin, ymin])
+        mesh._x0 = np.r_[xmin-mesh.hx[:10].sum(), xmin-mesh.hy[:10].sum()]
         # ...
-        xsurf = np.r_[0, 55, 90, 94, 109, 112, 126.5, 180.]
+        xsurf = np.r_[-1e10, 55, 90, 94, 109, 112, 126.5, +1e10]
         ysurf = np.r_[27.5, 27.5, 43.2, 43.2, 35, 35, 27.5, 27.5]
         yup = np.ones_like(ysurf)*45
         actind = Utils.surface2ind_topo(mesh, np.c_[xsurf, ysurf])
