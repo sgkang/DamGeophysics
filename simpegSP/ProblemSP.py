@@ -1,6 +1,6 @@
 from SimPEG import Problem, Utils, Maps, Mesh
 from SimPEG.EM.Base import BaseEMProblem
-from SimPEG.EM.Static.DC.FieldsDC import Fields, Fields_CC
+from SimPEG.EM.Static.DC.FieldsDC import FieldsDC, Fields_CC
 from SimPEG.EM.Static.DC import Survey, BaseDCProblem
 from SimPEG.Utils import sdiag
 import numpy as np
@@ -23,7 +23,7 @@ class SPPropMap(Maps.PropMap):
 class BaseSPProblem(BaseDCProblem):
 
     surveyPair = Survey
-    fieldsPair = Fields
+    fieldsPair = FieldsDC
     PropMap = SPPropMap
     Ainv = None
     sigma = None
