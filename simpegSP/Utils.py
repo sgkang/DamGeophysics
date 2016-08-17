@@ -33,6 +33,9 @@ def readSeepageModel(fname, mesh=None, xsurf=None, ysurf=None):
     h = fluiddata['Total Head (m)'].values
     Ux = fluiddata['X-Velocity Magnitude (m/sec)'].values
     Uy = fluiddata['Y-Velocity Magnitude (m/sec)'].values
+    Gradx = fluiddata['X-Gradient'].values
+    Grady = fluiddata['Y-Gradient'].values
+
     Pressure = fluiddata['Pressure Head (m)'].values
     Sw = fluiddata[fluiddata.keys()[17]].values
     Kx = fluiddata["X-Conductivity (m/sec)"]
@@ -64,6 +67,7 @@ def readSeepageModel(fname, mesh=None, xsurf=None, ysurf=None):
     hcc = F_hnear(mesh.gridCC)
 
     fluiddata = {"xyz": xyz, "h":h, "Sw":Sw, "Kx":Kx, "Ky":Ky, "P":Pressure, "Ux":Ux, "Uy":Uy,\
+                 "Gradx":Gradx, "Grady":Grady, \
                  "hcc": hcc, "mesh":mesh, "actind":actind, "waterind": waterind, \
                  "xsurf":xsurf, "ysurf":ysurf, "yup":yup}
 
