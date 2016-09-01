@@ -1,4 +1,5 @@
-from SimPEG import DCIP as DC
+# from SimPEG import DCIP as DC
+from SimPEG.EM.Static import DC
 import numpy as np
 
 def readReservoirDC(fname):
@@ -24,11 +25,11 @@ def readReservoirDC(fname):
         temp = DAT[ind,:]
         datalistSRC.append(temp)
         e = np.zeros_like(temp[:,2])
-        rxtemp = DC.RxDipole(np.c_[temp[:,2]*aspacing, e, e], np.c_[temp[:,3]*aspacing, e, e])
-        srctemp = DC.SrcDipole([rxtemp], np.r_[txloc[1]*aspacing, 0., 0.], np.r_[txloc[0]*aspacing, 0., 0.])
+        rxtemp = DC.Rx.Dipole(np.c_[temp[:,2]*aspacing, e, e], np.c_[temp[:,3]*aspacing, e, e])
+        srctemp = DC.Src.Dipole([rxtemp], np.r_[txloc[1]*aspacing, 0., 0.], np.r_[txloc[0]*aspacing, 0., 0.])
         srcList.append(srctemp)
     DAT_src = np.vstack(datalistSRC)
-    survey = DC.SurveyDC(srcList)
+    survey = DC.Survey(srcList)
     survey.dobs = DAT_src[:,-1]
     survey.height_water = height_water
     survey.height_dam = height_dam

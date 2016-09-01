@@ -40,3 +40,6 @@ nosetests.xml
 docs/_build/
 notebook/.ipynb_checkpoints/
 Makefile
+notebook/dammodel.txt
+notebook/dammodel_mesh.txt
+notebook/dammodel_ratio.txt

@@ -81,7 +81,7 @@ def gettopoCC(mesh, airind):
         Get topography from active indices of mesh.
     """
 
-    if mesh.dim ==3:
+    if mesh.dim == 3:
 
         mesh2D = Mesh.TensorMesh([mesh.hx, mesh.hy], mesh.x0[:2])
         zc = mesh.gridCC[:,2]
@@ -96,7 +96,7 @@ def gettopoCC(mesh, airind):
 
         return mesh2D, topoCC
 
-    elif mesh.dim ==2:
+    elif mesh.dim == 2:
 
         mesh1D = Mesh.TensorMesh([mesh.hx], [mesh.x0[0]])
         yc = mesh.gridCC[:,1]
