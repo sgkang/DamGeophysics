@@ -1,4 +1,5 @@
-from SimPEG import DCIP as DC
+# from SimPEG import DCIP as DC
+from SimPEG.EM.Static import DC
 import numpy as np
 
 def readReservoirDC(fname):
