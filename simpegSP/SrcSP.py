@@ -1,9 +1,15 @@
 from SimPEG.EM.Static.DC import Src
+from SimPEG import Props
+from SimPEG.Utils import sdiag
 
 class StreamingCurrents(Src.BaseSrc):
 
     L = None
     mesh = None
+    # "Hydraulic Head (m)"
+    # "Streaming current source (A/m^3)"
+    # "Streaming current density (A/m^2)"
+    modelType = None
 
     def __init__(self, rxList, **kwargs):
         Src.BaseSrc.__init__(self, rxList, **kwargs)
@@ -26,10 +32,41 @@ class StreamingCurrents(Src.BaseSrc):
 
         """
         if prob._formulation == 'HJ':
-            q = -prob.Div*self.MfLiI*prob.Grad*prob.curModel.h
+            if self.modelType == "Head":
+                q = -prob.Div*self.MfLiI*prob.Grad*prob.h
+            elif self.modelType == "CurrentSource":
+                q = prob.q
+            elif self.modelType == "CurrentDensity":
+                q = -prob.Div*prob.mesh.aveF2CCV.T*prob.js
+            else:
+                raise NotImplementedError()
         elif prob._formulation == 'EB':
             raise NotImplementedError()
         return q
+
+    def evalDeriv(self, prob, v=None, adjoint=False):
+        if prob._formulation == 'HJ':
+            if adjoint:
+                if self.modelType == "Head":
+                    srcDeriv = - prob.hDeriv.T * prob.Grad.T * self.MfLiI.T * (prob.Div.T * v)
+                elif self.modelType == "CurrentSource":
+                    srcDeriv = prob.qDeriv.T * v
+                elif self.modelType == "CurrentDensity":
+                    srcDeriv = - prob.jsDeriv.T * prob.mesh.aveF2CCV * (prob.Div.T*v)
+                else:
+                    raise NotImplementedError()
+            else:
+                if self.modelType == "Head":
+                    srcDeriv = -prob.Div*self.MfLiI*prob.Grad*(prob.hDeriv*v)
+                elif self.modelType == "CurrentSource":
+                    srcDeriv = prob.qDeriv * v
+                elif self.modelType == "CurrentDensity":
+                    srcDeriv = -prob.Div*prob.mesh.aveF2CCV.T*(prob.jsDeriv*v)
+                else:
+                    raise NotImplementedError()
+        elif prob._formulation == 'EB':
+            raise NotImplementedError()
+        return srcDeriv
 
     @property
     def MfLi(self):
@@ -48,18 +85,6 @@ class StreamingCurrents(Src.BaseSrc):
         if getattr(self, '_MfLiI', None) is None:
             self._MfLiI = self.mesh.getFaceInnerProduct(1./self.L, invMat=True)
         return self._MfLiI
-
-    def MfLiIDeriv(self, u):
-        """
-            Derivative of :code:`MfLiI` with respect to the model.
-
-        """
-
-        dMfLiI_dI = -self.MfLiI**2
-        dMf_dL = self.mesh.getFaceInnerProductDeriv(self.L)(u)
-        dL_dlogL = Utils.sdiag(self.L)*self.curModel.etaDeriv
-        return dMfLiI_dI * ( dMf_dL * ( dL_dlogL))
-
 
 if __name__ == '__main__':
     from SimPEG import Mesh, np
