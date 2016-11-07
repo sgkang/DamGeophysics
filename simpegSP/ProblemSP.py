@@ -6,25 +6,37 @@ from SimPEG.Utils import sdiag
 import numpy as np
 from SimPEG.Utils import Zero
 from SimPEG.EM.Static.DC import getxBCyBC_CC
-
-class SPPropMap(Maps.PropMap):
-
-    """
-        Property Map for IP Problems. The hydraulic head,
-        H is the default inversion property
-    """
-
-    h = Maps.Property("Hydraulic Head", defaultInvProp = True)
-    # L0 = 2.5*1e-4
-    # L = Maps.Property("Crosss Coupling Coefficient", defaultInvProp = False)
-	# Li = Maps.Property("Inverse Crosss Coupling Coefficient", defaultVal = 1./L0, propertyLink=('L', Maps.ReciprocalMap))
+from SimPEG import Props
 
 
 class BaseSPProblem(BaseDCProblem):
 
+    h, hMap, hDeriv = Props.Invertible(
+        "Hydraulic Head (m)"
+    )
+
+    q, qMap, qDeriv = Props.Invertible(
+        "Streaming current source (A/m^3)"
+    )
+
+    js, jsMap, jsDeriv = Props.Invertible(
+        "Streaming current density (A/m^2)"
+    )
+
+    sigma = Props.PhysicalProperty(
+        "Electrical conductivity (S/m)"
+    )
+
+    rho = Props.PhysicalProperty(
+        "Electrical resistivity (Ohm m)"
+    )
+
+    Props.Reciprocal(sigma, rho)
+
+    modelType = None
     surveyPair = Survey
     fieldsPair = FieldsDC
-    PropMap = SPPropMap
+    # PropMap = SPPropMap
     Ainv = None
     sigma = None
     rho = None
@@ -36,53 +48,25 @@ class BaseSPProblem(BaseDCProblem):
         toDelete = []
         return toDelete
 
-    # assume log rho or log cond
-    @property
-    def MeSigma(self):
-        """
-            Edge inner product matrix for \\(\\sigma\\). Used in the E-B formulation
-        """
-        if getattr(self, '_MeSigma', None) is None:
-            self._MeSigma = self.mesh.getEdgeInnerProduct(self.sigma)
-        return self._MeSigma
+    def evalq(self, Qv, vel):
+        MfQviI = self.mesh.getFaceInnerProduct(1./Qv, invMat=True)
+        Mf = self.mesh.getFaceInnerProduct()
+        return self.Div*(Mf*(MfQviI*vel))
 
-    @property
-    def MfRhoI(self):
-        """
-            Inverse of :code:`MfRho`
-        """
-        if getattr(self, '_MfRhoI', None) is None:
-            self._MfRhoI = self.mesh.getFaceInnerProduct(self.rho, invMat=True)
-        return self._MfRhoI
 
-    def MfRhoIDeriv(self,u):
-        """
-            Derivative of :code:`MfRhoI` with respect to the model.
-        """
-
-        dMfRhoI_dI = -self.MfRhoI**2
-        dMf_drho = self.mesh.getFaceInnerProductDeriv(self.rho)(u)
-        drho_dlogrho = Utils.sdiag(self.rho)*self.curModel.etaDeriv
-        return dMfRhoI_dI * ( dMf_drho * ( drho_dlogrho))
-
-    # TODO: This should take a vector
-    def MeSigmaDeriv(self, u):
-        """
-            Derivative of MeSigma with respect to the model
-        """
-        dsigma_dlogsigma = Utils.sdiag(self.sigma)*self.curModel.etaDeriv
-        return self.mesh.getEdgeInnerProductDeriv(self.sigma)(u) * dsigma_dlogsigma
 
 class Problem_CC(BaseSPProblem):
 
     _solutionType = 'phiSolution'
-    _formulation  = 'HJ' # CC potentials means J is on faces
-    fieldsPair    = Fields_CC
+    _formulation = 'HJ'  # CC potentials means J is on faces
+    fieldsPair = Fields_CC
+    modelType = None
 
     def __init__(self, mesh, **kwargs):
         BaseSPProblem.__init__(self, mesh, **kwargs)
-        if self.rho is None:
-        	raise Exception("Resistivity:rho needs to set when initializing SPproblem")
+        # if self.rho is None:
+        #     raise Exception("Resistivity:rho needs to set when \
+        #                      initializing SPproblem")
         self.setBC()
 
     def getA(self):
@@ -98,27 +82,11 @@ class Problem_CC(BaseSPProblem):
         G = self.Grad
         MfRhoI = self.MfRhoI
         A = D * MfRhoI * G
-
-        # I think we should deprecate this for DC problem.
-        # if self._makeASymmetric is True:
-        #     return V.T * A
         return A
 
     def getADeriv(self, u, v, adjoint= False):
-
-        D = self.Div
-        G = self.Grad
-        MfRhoIDeriv = self.MfRhoIDeriv
-
-        if adjoint:
-            # if self._makeASymmetric is True:
-            #     v = V * v
-            return(MfRhoIDeriv( G * u ).T) * ( D.T * v)
-
-        # I think we should deprecate this for DC problem.
-        # if self._makeASymmetric is True:
-        #     return V.T * ( D * ( MfRhoIDeriv( D.T * ( V * u ) ) * v ) )
-        return D * (MfRhoIDeriv( G * u ) * v)
+        # We assume conductivity is known
+        return Zero()
 
     def getRHS(self):
         """
@@ -128,21 +96,13 @@ class Problem_CC(BaseSPProblem):
         """
 
         RHS = self.getSourceTerm()
-
-        # I think we should deprecate this for DC problem.
-        # if self._makeASymmetric is True:
-        #     return self.Vol.T * RHS
-
         return RHS
 
     def getRHSDeriv(self, src, v, adjoint=False):
         """
         Derivative of the right hand side with respect to the model
         """
-        # TODO: add qDeriv for RHS depending on m
-        # qDeriv = src.evalDeriv(self, adjoint=adjoint)
-        # return qDeriv
-        return Zero()
+        return src.evalDeriv(self, v=v, adjoint=adjoint)
 
     def setBC(self):
         if self.mesh.dim==3:

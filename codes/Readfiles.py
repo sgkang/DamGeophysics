@@ -12,5 +12,3 @@ def getFnames(dir, dtype="apr", minimumsize=7000.):
             fnames.append(file)
     os.chdir("../../notebook")
     return fnames
-
-
