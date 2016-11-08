@@ -19,8 +19,16 @@ class BaseSPProblem(BaseDCProblem):
         "Streaming current source (A/m^3)"
     )
 
-    js, jsMap, jsDeriv = Props.Invertible(
-        "Streaming current density (A/m^2)"
+    jsx, jsxMap, jsxDeriv = Props.Invertible(
+        "Streaming current density in x-direction (A/m^2)"
+    )
+
+    jsy, jsyMap, jsyDeriv = Props.Invertible(
+        "Streaming current density in y-direction (A/m^2)"
+    )
+
+    jsz, jszMap, jszDeriv = Props.Invertible(
+        "Streaming current density in z-direction (A/m^2)"
     )
 
     sigma = Props.PhysicalProperty(

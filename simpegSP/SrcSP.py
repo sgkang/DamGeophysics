@@ -1,6 +1,8 @@
 from SimPEG.EM.Static.DC import Src
 from SimPEG import Props
 from SimPEG.Utils import sdiag
+import scipy.sparse as sp
+import numpy as np
 
 class StreamingCurrents(Src.BaseSrc):
 
@@ -37,7 +39,7 @@ class StreamingCurrents(Src.BaseSrc):
             elif self.modelType == "CurrentSource":
                 q = prob.q
             elif self.modelType == "CurrentDensity":
-                q = -prob.Div*prob.mesh.aveF2CCV.T*prob.js
+                q = -prob.Div*prob.mesh.aveF2CCV.T*np.r_[prob.jsx, prob.jsy, prob.jsz]
             else:
                 raise NotImplementedError()
         elif prob._formulation == 'EB':
@@ -52,7 +54,8 @@ class StreamingCurrents(Src.BaseSrc):
                 elif self.modelType == "CurrentSource":
                     srcDeriv = prob.qDeriv.T * v
                 elif self.modelType == "CurrentDensity":
-                    srcDeriv = - prob.jsDeriv.T * prob.mesh.aveF2CCV * (prob.Div.T*v)
+                    jsDeriv = sp.vstack((prob.jsxDeriv, prob.jsyDeriv, prob.jszDeriv))
+                    srcDeriv = - jsDeriv.T * prob.mesh.aveF2CCV * (prob.Div.T*v)
                 else:
                     raise NotImplementedError()
             else:
@@ -61,7 +64,8 @@ class StreamingCurrents(Src.BaseSrc):
                 elif self.modelType == "CurrentSource":
                     srcDeriv = prob.qDeriv * v
                 elif self.modelType == "CurrentDensity":
-                    srcDeriv = -prob.Div*prob.mesh.aveF2CCV.T*(prob.jsDeriv*v)
+                    jsDeriv = sp.vstack((prob.jsxDeriv, prob.jsyDeriv, prob.jszDeriv))
+                    srcDeriv = -prob.Div*prob.mesh.aveF2CCV.T*(jsDeriv*v)
                 else:
                     raise NotImplementedError()
         elif prob._formulation == 'EB':
