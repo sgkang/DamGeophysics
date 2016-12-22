@@ -12,7 +12,7 @@ class BaseDarcyProblem(Problem.BaseProblem):
         "Hydraulic conductivity (m/s)"
     )
 
-    Ki, KiMap, KDeriv = Props.Invertible(
+    Ki, KiMap, KiDeriv = Props.Invertible(
         "Hydraulic resistivity (s/m)"
     )
 
@@ -48,7 +48,7 @@ class BaseDarcyProblem(Problem.BaseProblem):
 
     @property
     def deleteTheseOnModelUpdate(self):
-        toDelete = []
+        toDelete = ["_MfK", "_MfKi", "_MfKiI"]
         return toDelete
 
     @property
@@ -98,7 +98,11 @@ class BaseDarcyProblem(Problem.BaseProblem):
 
     def vel (self, u):
         MfI = self.mesh.getFaceInnerProduct(invMat=True)
-        return self.MfKiI*self.Grad*u
+        vel =  self.MfKiI*self.Grad*u
+        fxm, fxp, fym, fyp, fzm, fzp = self.mesh.faceBoundaryInd
+        find = np.r_[fxm+fxp, fym+fyp, fzm+fzp]
+        vel[find] = 0.
+        return vel
 
     def p (self, u):
         return u - self.mesh.gridCC[:, 2]
@@ -116,6 +120,9 @@ class Problem_CC(BaseDarcyProblem):
     def __init__(self, mesh, **kwargs):
         BaseDarcyProblem.__init__(self, mesh, **kwargs)
         self.mesh.setCellGradBC("neumann")
+        fxm, fxp, fym, fyp, fzm, fzp = self.mesh.faceBoundaryInd
+        self.find = np.r_[fxm+fxp, fym+fyp, fzm+fzp]
+
         # if self.Ki is None:
         #     raise Exception("Resistivity:Ki needs to set when \
         #                      initializing SPproblem")
